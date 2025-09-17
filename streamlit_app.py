@@ -178,6 +178,55 @@ st.set_page_config(page_title="인기 YouTube 동영상", page_icon="📺", layo
 st.title("📺 YouTube 인기 동영상")
 st.caption("간단한 YouTube API로 인기 동영상을 보여주는 데모 앱")
 
+"""
+간단 로그인 구현: st.secrets["auth"]["users"] 에 정의된 사용자/비밀번호로 인증
+구조 예시 (secrets.toml):
+[auth]
+enabled = true
+
+[auth.users]
+demo = "demo123"
+"""
+
+def is_authenticated() -> bool:
+    auth_conf = st.secrets.get("auth", {})
+    enabled = bool(auth_conf.get("enabled", False))
+    if not enabled:
+        return True
+    if st.session_state.get("auth_user"):
+        return True
+    return False
+
+def login_ui():
+    with st.sidebar:
+        st.header("로그인")
+        st.write("개별 사용을 위해 로그인하세요.")
+        uname = st.text_input("아이디", key="login_username")
+        upwd = st.text_input("비밀번호", type="password", key="login_password")
+        do_login = st.button("로그인")
+    if do_login:
+        users = (st.secrets.get("auth", {}).get("users", {}))
+        expected = users.get(uname)
+        if expected and str(expected) == str(upwd):
+            st.session_state["auth_user"] = uname
+            st.success("로그인 성공")
+            st.rerun()
+        else:
+            st.error("아이디 또는 비밀번호가 올바르지 않습니다.")
+
+def logout_ui():
+    with st.sidebar:
+        if st.button("로그아웃"):
+            st.session_state.pop("auth_user", None)
+            st.experimental_set_query_params()  # 상태 초기화 보조
+            st.rerun()
+
+if not is_authenticated():
+    login_ui()
+    st.stop()
+
+logout_ui()
+
 with st.sidebar:
     st.header("설정")
     region = st.text_input("Region Code (예: KR, US, JP)", value=DEFAULT_REGION, max_chars=2)
@@ -304,3 +353,4 @@ for idx, v in enumerate(filtered_items, start=1):
         st.write(f"👍 {like_text} | 💬 {comment_text} | ⏱️ {duration_text} | 📅 {rel_time}")
 
 st.success("완료")
+
