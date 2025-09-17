@@ -177,16 +177,15 @@ st.set_page_config(page_title="인기 YouTube 동영상", page_icon="📺", layo
 
 st.title("📺 YouTube 인기 동영상")
 st.caption("간단한 YouTube API로 인기 동영상을 보여주는 데모 앱")
-
-"""
-간단 로그인 구현: st.secrets["auth"]["users"] 에 정의된 사용자/비밀번호로 인증
-구조 예시 (secrets.toml):
-[auth]
-enabled = true
-
-[auth.users]
-demo = "demo123"
-"""
+ 
+# 간단 로그인 구현
+# st.secrets["auth"]["users"] 에 정의된 사용자/비밀번호로 인증
+# 구조 예시 (secrets.toml):
+# [auth]
+# enabled = true
+# 
+# [auth.users]
+# demo = "demo123"
 
 def is_authenticated() -> bool:
     auth_conf = st.secrets.get("auth", {})
@@ -222,7 +221,24 @@ def logout_ui():
             st.rerun()
 
 if not is_authenticated():
+    # 사이드바 로그인 UI
     login_ui()
+    # 본문에도 로그인 폼 제공 (가시성 향상)
+    st.subheader("🔐 로그인 필요")
+    st.info("사이드바 또는 아래 폼에서 로그인하세요.")
+    with st.form("login_form_main"):
+        uname_main = st.text_input("아이디", key="login_username_main")
+        upwd_main = st.text_input("비밀번호", type="password", key="login_password_main")
+        submitted = st.form_submit_button("로그인")
+    if submitted:
+        users = (st.secrets.get("auth", {}).get("users", {}))
+        expected = users.get(uname_main)
+        if expected and str(expected) == str(upwd_main):
+            st.session_state["auth_user"] = uname_main
+            st.success("로그인 성공")
+            st.rerun()
+        else:
+            st.error("아이디 또는 비밀번호가 올바르지 않습니다.")
     st.stop()
 
 logout_ui()
